@@ -1,17 +1,3 @@
-const issues = [
-  {
-    id: 1, status: 'Open', owner: 'Ravan',
-    created: new Date('2016-08-15'), effort: 5, completionDate: undefined,
-    title: 'Error in console when clicking Add',
-  },
-  {
-    id: 2, status: 'Assigned', owner: 'Eddie',
-    created: new Date('2016-08-16'), effort: 14,
-    completionDate: new Date('2016-08-30'),
-    title: 'Missing bottom border on panel',
-  },
-]
-
 class IssueList extends React.Component {
   constructor() {
     super()
@@ -26,17 +12,54 @@ class IssueList extends React.Component {
     this.loadData()
   }
 
-  loadData() {
-    setTimeout(() => {
-      this.setState({ issues: issues }, 500)
-    })
+  async loadData() {
+    try {
+      const response = await fetch('/api/issues')
+      const data = await response.json()
+
+      console.log('Total number of records:', data._metadata.total_count)
+
+      data.records.forEach(issue => {
+        issue.created = new Date(issue.created)
+        if (issue.completionDate) issue.completionDate = new Date(issue.completionDate)
+      })
+
+      this.setState({ issues: data.records })
+    } 
+    
+    catch (err) {
+      console.log(err)
+    }
   }
 
-  createIssue(newIssue) {
-    const newIssues = this.state.issues.slice()
-    newIssue.id = this.state.issues.length + 1
-    newIssues.push(newIssue)
-    this.setState({ issues: newIssues })
+  async createIssue(newIssue) {
+    try {
+      const response = await fetch(
+        '/api/issues', 
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newIssue)
+        }
+      )
+
+      if (response.ok) {
+        const updatedIssue = await response.json()
+        updatedIssue.created = new Date(updatedIssue.created)
+        if (updatedIssue.completionDate) updatedIssue.completionDate = new Date(updatedIssue.completionDate)
+  
+        const newIssues = this.state.issues.concat(updatedIssue)
+        this.setState({ issues: newIssues })
+      } else {
+        const error = await response.json()
+        alert('Failed to add an issue: ' + error.message)
+      }
+
+    } 
+    
+    catch (err) {
+      alert('Error in sending data to server: ' + err.message)
+    }
   }
 
   render() {

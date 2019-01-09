@@ -8,17 +8,6 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var issues = [{
-  id: 1, status: 'Open', owner: 'Ravan',
-  created: new Date('2016-08-15'), effort: 5, completionDate: undefined,
-  title: 'Error in console when clicking Add'
-}, {
-  id: 2, status: 'Assigned', owner: 'Eddie',
-  created: new Date('2016-08-16'), effort: 14,
-  completionDate: new Date('2016-08-30'),
-  title: 'Missing bottom border on panel'
-}];
-
 var IssueList = function (_React$Component) {
   _inherits(IssueList, _React$Component);
 
@@ -42,20 +31,47 @@ var IssueList = function (_React$Component) {
     }
   }, {
     key: 'loadData',
-    value: function loadData() {
-      var _this2 = this;
+    value: async function loadData() {
+      try {
+        var response = await fetch('/api/issues');
+        var data = await response.json();
 
-      setTimeout(function () {
-        _this2.setState({ issues: issues }, 500);
-      });
+        console.log('Total number of records:', data._metadata.total_count);
+
+        data.records.forEach(function (issue) {
+          issue.created = new Date(issue.created);
+          if (issue.completionDate) issue.completionDate = new Date(issue.completionDate);
+        });
+
+        this.setState({ issues: data.records });
+      } catch (err) {
+        console.log(err);
+      }
     }
   }, {
     key: 'createIssue',
-    value: function createIssue(newIssue) {
-      var newIssues = this.state.issues.slice();
-      newIssue.id = this.state.issues.length + 1;
-      newIssues.push(newIssue);
-      this.setState({ issues: newIssues });
+    value: async function createIssue(newIssue) {
+      try {
+        var response = await fetch('/api/issues', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newIssue)
+        });
+
+        if (response.ok) {
+          var updatedIssue = await response.json();
+          updatedIssue.created = new Date(updatedIssue.created);
+          if (updatedIssue.completionDate) updatedIssue.completionDate = new Date(updatedIssue.completionDate);
+
+          var newIssues = this.state.issues.concat(updatedIssue);
+          this.setState({ issues: newIssues });
+        } else {
+          var error = await response.json();
+          alert('Failed to add an issue: ' + error.message);
+        }
+      } catch (err) {
+        alert('Error in sending data to server: ' + err.message);
+      }
     }
   }, {
     key: 'render',
@@ -223,10 +239,10 @@ var IssueAdd = function (_React$Component3) {
   function IssueAdd() {
     _classCallCheck(this, IssueAdd);
 
-    var _this4 = _possibleConstructorReturn(this, (IssueAdd.__proto__ || Object.getPrototypeOf(IssueAdd)).call(this));
+    var _this3 = _possibleConstructorReturn(this, (IssueAdd.__proto__ || Object.getPrototypeOf(IssueAdd)).call(this));
 
-    _this4.handleSubmit = _this4.handleSubmit.bind(_this4);
-    return _this4;
+    _this3.handleSubmit = _this3.handleSubmit.bind(_this3);
+    return _this3;
   }
 
   _createClass(IssueAdd, [{
