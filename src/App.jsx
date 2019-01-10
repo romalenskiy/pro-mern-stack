@@ -15,18 +15,22 @@ class IssueList extends React.Component {
   async loadData() {
     try {
       const response = await fetch('/api/issues')
-      const data = await response.json()
+      if (response.ok) {
+        const data = await response.json()
 
-      console.log('Total number of records:', data._metadata.total_count)
+        console.log('Total number of records:', data._metadata.total_count)
 
-      data.records.forEach(issue => {
-        issue.created = new Date(issue.created)
-        if (issue.completionDate) issue.completionDate = new Date(issue.completionDate)
-      })
+        data.records.forEach(issue => {
+          issue.created = new Date(issue.created)
+          if (issue.completionDate) issue.completionDate = new Date(issue.completionDate)
+        })
 
-      this.setState({ issues: data.records })
+        this.setState({ issues: data.records })
+      } else {
+        const error = await response.json()
+        alert('Failed to fetch issues: ' + error.message)
+      }
     } 
-    
     catch (err) {
       console.log(err)
     }
@@ -56,7 +60,6 @@ class IssueList extends React.Component {
       }
 
     } 
-    
     catch (err) {
       alert('Error in sending data to server: ' + err.message)
     }
@@ -87,7 +90,7 @@ class IssueFilter extends React.Component {
 
 const IssueTable = (props) => {
   const { issues } = props
-  const issueRows = issues.map((issue) => <IssueRow key={issue.id} issue={issue} />)
+  const issueRows = issues.map((issue) => <IssueRow key={issue._id} issue={issue} />)
   return (
     <table className="bordered-table">
       <thead>
@@ -109,11 +112,11 @@ const IssueTable = (props) => {
 }
 
 const IssueRow = (props) => {
-  const {id, status, owner, created, effort, completionDate, title} = props.issue
+  const {_id, status, owner, created, effort, completionDate, title} = props.issue
 
   return (
     <tr>
-      <td>{id}</td>
+      <td>{_id}</td>
       <td>{status}</td>
       <td>{owner}</td>
       <td>{created.toDateString()}</td>

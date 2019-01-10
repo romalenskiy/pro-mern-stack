@@ -34,16 +34,21 @@ var IssueList = function (_React$Component) {
     value: async function loadData() {
       try {
         var response = await fetch('/api/issues');
-        var data = await response.json();
+        if (response.ok) {
+          var data = await response.json();
 
-        console.log('Total number of records:', data._metadata.total_count);
+          console.log('Total number of records:', data._metadata.total_count);
 
-        data.records.forEach(function (issue) {
-          issue.created = new Date(issue.created);
-          if (issue.completionDate) issue.completionDate = new Date(issue.completionDate);
-        });
+          data.records.forEach(function (issue) {
+            issue.created = new Date(issue.created);
+            if (issue.completionDate) issue.completionDate = new Date(issue.completionDate);
+          });
 
-        this.setState({ issues: data.records });
+          this.setState({ issues: data.records });
+        } else {
+          var error = await response.json();
+          alert('Failed to fetch issues: ' + error.message);
+        }
       } catch (err) {
         console.log(err);
       }
@@ -125,7 +130,7 @@ var IssueTable = function IssueTable(props) {
   var issues = props.issues;
 
   var issueRows = issues.map(function (issue) {
-    return React.createElement(IssueRow, { key: issue.id, issue: issue });
+    return React.createElement(IssueRow, { key: issue._id, issue: issue });
   });
   return React.createElement(
     'table',
@@ -183,7 +188,7 @@ var IssueTable = function IssueTable(props) {
 
 var IssueRow = function IssueRow(props) {
   var _props$issue = props.issue,
-      id = _props$issue.id,
+      _id = _props$issue._id,
       status = _props$issue.status,
       owner = _props$issue.owner,
       created = _props$issue.created,
@@ -198,7 +203,7 @@ var IssueRow = function IssueRow(props) {
     React.createElement(
       'td',
       null,
-      id
+      _id
     ),
     React.createElement(
       'td',
