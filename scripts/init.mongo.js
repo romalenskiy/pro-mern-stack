@@ -1,16 +1,20 @@
-db = new Mongo().getDB('issuetracker')
-
+const db = new Mongo().getDB('issuetracker') // eslint-disable-line no-undef
 db.issues.remove({})
 
 db.issues.insert([
   {
-    status: 'Open', owner: 'Ravan',
-    created: new Date('2016-08-15'), effort: 5, completionDate: undefined,
+    status: 'Open',
+    owner: 'Ravan',
+    created: new Date('2016-08-15'),
+    effort: 5,
+    completionDate: undefined,
     title: 'Error in console when clicking Add',
   },
   {
-    status: 'Assigned', owner: 'Eddie',
-    created: new Date('2016-08-16'), effort: 14,
+    status: 'Assigned',
+    owner: 'Eddie',
+    created: new Date('2016-08-16'),
+    effort: 14,
     completionDate: new Date('2016-08-30'),
     title: 'Missing bottom border on panel',
   },
