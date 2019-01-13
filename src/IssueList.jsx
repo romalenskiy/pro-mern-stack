@@ -1,4 +1,6 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
+import PropTypes from 'prop-types'
 import 'whatwg-fetch'
 
 import IssueAdd from './IssueAdd.jsx' // eslint-disable-line import/extensions
@@ -11,15 +13,37 @@ class IssueList extends React.Component {
       issues: [],
     }
     this.createIssue = this.createIssue.bind(this)
+    this.setFilter = this.setFilter.bind(this)
   }
 
   componentDidMount() {
     this.loadData()
   }
 
+  componentDidUpdate(prevProps) {
+    const oldQuery = prevProps.location.search
+    const { location } = this.props
+    const newQuery = location.search
+
+    if (newQuery !== oldQuery) this.loadData()
+  }
+
+  setFilter(query) {
+    const { history, location } = this.props
+    let search
+    if (Object.keys(query).length !== 0) {
+      const key = Object.keys(query)[0].toString()
+      const value = query[key]
+      search = `?${key}=${value}`
+    } else search = ''
+    history.push({ pathname: location.pathname, search })
+  }
+
   async loadData() {
     try {
-      const response = await fetch('/api/issues')
+      const { location } = this.props
+      const { search } = location
+      const response = await fetch(`/api/issues${search}`)
       if (response.ok) {
         const data = await response.json()
 
@@ -74,8 +98,7 @@ class IssueList extends React.Component {
     const { issues } = this.state
     return (
       <div>
-        <h1>Issue Tracker</h1>
-        <IssueFilter />
+        <IssueFilter setFilter={this.setFilter} />
         <hr />
         <IssueTable issues={issues} />
         <hr />
@@ -83,6 +106,11 @@ class IssueList extends React.Component {
       </div>
     )
   }
+}
+
+IssueList.propTypes = {
+  location: PropTypes.object.isRequired, // eslint-disable-line
+  history: PropTypes.object, // eslint-disable-line
 }
 
 const IssueTable = (props) => {
@@ -116,7 +144,11 @@ const IssueRow = (props) => {
 
   return (
     <tr>
-      <td>{_id}</td>
+      <td>
+        <Link to={`/issues/${_id}`}>
+          {_id.substr(-4)}
+        </Link>
+      </td>
       <td>{status}</td>
       <td>{owner}</td>
       <td>{created.toDateString()}</td>

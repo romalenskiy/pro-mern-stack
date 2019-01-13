@@ -1,4 +1,5 @@
 import React from 'react'
+import PropTypes from 'prop-types'
 
 class IssueAdd extends React.Component {
   constructor() {
@@ -33,6 +34,10 @@ class IssueAdd extends React.Component {
       </div>
     )
   }
+}
+
+IssueAdd.propTypes = {
+  createIssue: PropTypes.func.isRequired,
 }
 
 export default IssueAdd
