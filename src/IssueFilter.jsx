@@ -2,37 +2,94 @@ import React from 'react'
 import PropTypes from 'prop-types'
 
 class IssueFilter extends React.Component {
-  constructor() {
-    super()
+  constructor(props) {
+    super(props)
+    this.state = {
+      status: props.initFilter.status || '',
+      effort_gte: props.initFilter.effort_gte || '',
+      effort_lte: props.initFilter.effort_lte || '',
+      changed: false,
+    }
+    this.onChangeStatus = this.onChangeStatus.bind(this)
+    this.onChangeEffortGte = this.onChangeEffortGte.bind(this)
+    this.onChangeEffortLte = this.onChangeEffortLte.bind(this)
+    this.applyFilter = this.applyFilter.bind(this)
+    this.resetFilter = this.resetFilter.bind(this)
     this.clearFilter = this.clearFilter.bind(this)
-    this.setFilterOpen = this.setFilterOpen.bind(this)
-    this.setFilterAssigned = this.setFilterAssigned.bind(this)
   }
 
-  setFilterOpen() {
-    const { setFilter } = this.props
-    setFilter({ status: 'Open' })
+  onChangeStatus(e) {
+    this.setState({ status: e.target.value, changed: true })
   }
 
-  setFilterAssigned() {
+  onChangeEffortGte(e) {
+    const effortString = e.target.value
+    if (effortString.match(/^\d*$/)) this.setState({ effort_gte: e.target.value, changed: true })
+  }
+
+  onChangeEffortLte(e) {
+    const effortString = e.target.value
+    if (effortString.match(/^\d*$/)) this.setState({ effort_lte: e.target.value, changed: true })
+  }
+
+  applyFilter() {
+    const { status, effort_gte, effort_lte } = this.state
     const { setFilter } = this.props
-    setFilter({ status: 'Assigned' })
+    const newFilter = {}
+
+    //  Any condition not specified will be undefined, and not an empty string.
+    if (status) newFilter.status = status
+    if (effort_gte) newFilter.effort_gte = effort_gte
+    if (effort_lte) newFilter.effort_lte = effort_lte
+
+    setFilter(newFilter)
+    this.setState({
+      changed: false,
+    })
   }
 
   clearFilter() {
     const { setFilter } = this.props
     setFilter({})
+    this.setState({
+      status: '',
+      effort_gte: '',
+      effort_lte: '',
+      changed: false,
+    })
+  }
+
+  resetFilter() {
+    const { initFilter } = this.props
+    this.setState({
+      status: initFilter.status || '',
+      effort_gte: initFilter.effort_gte || '',
+      effort_lte: initFilter.effort_lte || '',
+      changed: false,
+    })
   }
 
   render() {
-    const Separator = () => <span> | </span>
+    const { status, effort_gte, effort_lte, changed } = this.state
     return (
       <div>
-        <button type="button" onClick={this.clearFilter}>All Issues</button>
-        <Separator />
-        <button type="button" onClick={this.setFilterOpen}>Open Issues</button>
-        <Separator />
-        <button type="button" onClick={this.setFilterAssigned}>Assigned Issues</button>
+        Status:
+        <select value={status} onChange={this.onChangeStatus}>
+          <option value="">(Any)</option>
+          <option value="New">New</option>
+          <option value="Open">Open</option>
+          <option value="Assigned">Assigned</option>
+          <option value="Fixed">Fixed</option>
+          <option value="Verified">Verified</option>
+          <option value="Closed">Closed</option>
+        </select>
+        &nbsp;Effort between:
+        <input size={5} value={effort_gte} onChange={this.onChangeEffortGte} />
+        &nbsp;-&nbsp;
+        <input size={5} value={effort_lte} onChange={this.onChangeEffortLte} />
+        <button type="button" onClick={this.applyFilter}>Apply</button>
+        <button type="button" onClick={this.resetFilter} disabled={!changed}>Reset</button>
+        <button type="button" onClick={this.clearFilter}>Clear</button>
       </div>
     )
   }
@@ -40,6 +97,7 @@ class IssueFilter extends React.Component {
 
 IssueFilter.propTypes = {
   setFilter: PropTypes.func.isRequired,
+  initFilter: PropTypes.object.isRequired, // eslint-disable-line
 }
 
 export default IssueFilter

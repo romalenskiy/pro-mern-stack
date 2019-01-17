@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import PropTypes from 'prop-types'
+import qs from 'qs'
 import 'whatwg-fetch'
 
 import IssueAdd from './IssueAdd.jsx' // eslint-disable-line import/extensions
@@ -14,6 +15,7 @@ class IssueList extends React.Component {
     }
     this.createIssue = this.createIssue.bind(this)
     this.setFilter = this.setFilter.bind(this)
+    this.deleteIssue = this.deleteIssue.bind(this)
   }
 
   componentDidMount() {
@@ -30,12 +32,7 @@ class IssueList extends React.Component {
 
   setFilter(query) {
     const { history, location } = this.props
-    let search
-    if (Object.keys(query).length !== 0) {
-      const key = Object.keys(query)[0].toString()
-      const value = query[key]
-      search = `?${key}=${value}`
-    } else search = ''
+    const search = qs.stringify(query, { addQueryPrefix: true })
     history.push({ pathname: location.pathname, search })
   }
 
@@ -81,8 +78,8 @@ class IssueList extends React.Component {
           updatedIssue.completionDate = new Date(updatedIssue.completionDate)
         }
 
-        this.setState((prevState) => {
-          const newIssues = prevState.issues.concat(updatedIssue)
+        this.setState((state) => {
+          const newIssues = state.issues.concat(updatedIssue)
           return { issues: newIssues }
         })
       } else {
@@ -94,13 +91,22 @@ class IssueList extends React.Component {
     }
   }
 
+  async deleteIssue(id) {
+    const response = await fetch(`/api/issues/${id}`, { method: 'DELETE' })
+
+    if (!response.ok) alert('Failed to delete issue!')
+    else this.loadData()
+  }
+
   render() {
     const { issues } = this.state
+    const { location } = this.props
+    const initFilter = qs.parse(location.search, { ignoreQueryPrefix: true })
     return (
       <div>
-        <IssueFilter setFilter={this.setFilter} />
+        <IssueFilter setFilter={this.setFilter} initFilter={initFilter} />
         <hr />
-        <IssueTable issues={issues} />
+        <IssueTable issues={issues} deleteIssue={this.deleteIssue} />
         <hr />
         <IssueAdd createIssue={this.createIssue} />
       </div>
@@ -114,8 +120,10 @@ IssueList.propTypes = {
 }
 
 const IssueTable = (props) => {
-  const { issues } = props
-  const issueRows = issues.map(issue => <IssueRow key={issue._id} issue={issue} />)
+  const { issues, deleteIssue } = props
+  const issueRows = issues.map(issue => (
+    <IssueRow key={issue._id} issue={issue} deleteIssue={deleteIssue} />
+  ))
   return (
     <table className="bordered-table">
       <thead>
@@ -127,6 +135,7 @@ const IssueTable = (props) => {
           <th>Effort</th>
           <th>Completion Date</th>
           <th>Title</th>
+          <th />
         </tr>
       </thead>
       <tbody>
@@ -136,11 +145,21 @@ const IssueTable = (props) => {
   )
 }
 
+IssueTable.propTypes = {
+  issues: PropTypes.object.isRequired, // eslint-disable-line
+  deleteIssue: PropTypes.func.isRequired,
+}
+
 const IssueRow = (props) => {
-  const { issue } = props
+  const { issue, deleteIssue } = props
   const {
-    _id, status, owner, created, effort, completionDate, title,
+    _id, status, owner, created,
+    effort, completionDate, title,
   } = issue
+
+  function onDeleteClick() {
+    deleteIssue(issue._id)
+  }
 
   return (
     <tr>
@@ -155,8 +174,14 @@ const IssueRow = (props) => {
       <td>{effort}</td>
       <td>{completionDate ? completionDate.toDateString() : ''}</td>
       <td>{title}</td>
+      <td><button type="button" onClick={onDeleteClick}>Delete</button></td>
     </tr>
   )
+}
+
+IssueRow.propTypes = {
+  issue: PropTypes.object.isRequire, // eslint-disable-line
+  deleteIssue: PropTypes.func.isRequired,
 }
 
 export default IssueList

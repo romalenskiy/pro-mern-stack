@@ -46,7 +46,7 @@ const RouterApp = () => (
           render={() => <Redirect to="/issues" />}
         />
         <Route exact path="/issues" component={withRouter(IssueList)} />
-        <Route path="/issues/:id" component={IssueEdit} />
+        <Route path="/issues/:id" component={withRouter(IssueEdit)} />
         <Route path="*" component={NoMatch} />
       </Switch>
     </App>
