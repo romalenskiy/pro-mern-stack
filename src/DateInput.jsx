@@ -54,16 +54,12 @@ class DateInput extends React.Component {
 
   render() {
     const { value, valid, focused } = this.state
-    const { name } = this.props
-    const className = (!valid && !focused) ? 'invalid' : null
+    const { onValidityChange, ...clearProps } = this.props
     const appropriateValue = (focused || !valid) ? value : DateInput.displayFormat(this.props.value)
 
     return (
       <input
-        type="text"
-        size={20} 
-        name={name} 
-        className={className}
+        {...clearProps}
         value={appropriateValue}
         placeholder={focused ? 'YYYY-MM-DD' : null}
         onFocus={this.onFocus}

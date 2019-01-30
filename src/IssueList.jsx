@@ -4,18 +4,26 @@ import PropTypes from 'prop-types'
 import qs from 'qs'
 import 'whatwg-fetch'
 
-import IssueAdd from './IssueAdd.jsx' // eslint-disable-line import/extensions
+import {
+  Button, Glyphicon, Table, Panel,
+} from 'react-bootstrap'
+
 import IssueFilter from './IssueFilter.jsx' // eslint-disable-line import/extensions
+import Toast from './Toast.jsx' // eslint-disable-line import/extensions
 
 class IssueList extends React.Component {
   constructor() {
     super()
     this.state = {
       issues: [],
+      toastVisible: false,
+      toastMessage: '',
+      toastType: 'success',
     }
-    this.createIssue = this.createIssue.bind(this)
     this.setFilter = this.setFilter.bind(this)
     this.deleteIssue = this.deleteIssue.bind(this)
+    this.showError = this.showError.bind(this)
+    this.dismissToast = this.dismissToast.bind(this)
   }
 
   componentDidMount() {
@@ -52,63 +60,56 @@ class IssueList extends React.Component {
         this.setState({ issues: data.records })
       } else {
         const error = await response.json()
-        alert(`Failed to fetch issues: ${error.message}`)
+        this.showError(`Failed to fetch issues: ${error.message}`)
       }
     } catch (err) {
-      console.log(err)
-    }
-  }
-
-  async createIssue(newIssue) {
-    try {
-      const response = await fetch(
-        '/api/issues',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newIssue),
-        },
-      )
-
-      if (response.ok) {
-        const updatedIssue = await response.json()
-        updatedIssue.created = new Date(updatedIssue.created)
-
-        if (updatedIssue.completionDate) {
-          updatedIssue.completionDate = new Date(updatedIssue.completionDate)
-        }
-
-        this.setState((state) => {
-          const newIssues = state.issues.concat(updatedIssue)
-          return { issues: newIssues }
-        })
-      } else {
-        const error = await response.json()
-        alert(`Failed to add an issue: ${error.message}`)
-      }
-    } catch (err) {
-      alert(`Error in sending data to server: ${err.message}`)
+      this.showError(`Error in fetching data from server: ${err}`)
     }
   }
 
   async deleteIssue(id) {
     const response = await fetch(`/api/issues/${id}`, { method: 'DELETE' })
 
-    if (!response.ok) alert('Failed to delete issue!')
+
+    if (!response.ok) this.showError('Failed to delete issue!')
     else this.loadData()
   }
 
+  showError(message) {
+    this.setState({ toastVisible: true, toastMessage: message, toastType: 'danger' })
+  }
+
+  dismissToast() {
+    this.setState({ toastVisible: false })
+  }
+
   render() {
-    const { issues } = this.state
+    const {
+      issues, toastVisible, toastMessage, toastType,
+    } = this.state
     const { location } = this.props
     const initFilter = qs.parse(location.search, { ignoreQueryPrefix: true })
     return (
       <div>
-        <IssueFilter setFilter={this.setFilter} initFilter={initFilter} />
-        <hr />
+        <Panel defaultExpanded>
+          <Panel.Toggle componentClass={Panel.Heading}>
+            <Panel.Title>
+              Filter
+            </Panel.Title>
+          </Panel.Toggle>
+          <Panel.Collapse>
+            <Panel.Body>
+              <IssueFilter setFilter={this.setFilter} initFilter={initFilter} />
+            </Panel.Body>
+          </Panel.Collapse>
+        </Panel>
         <IssueTable issues={issues} deleteIssue={this.deleteIssue} />
-        <hr />
-        <IssueAdd createIssue={this.createIssue} />
+        <Toast
+          bsStyle={toastType}
+          showing={toastVisible}
+          message={toastMessage}
+          onDismiss={this.dismissToast}
+        />
       </div>
     )
   }
@@ -125,7 +126,7 @@ const IssueTable = (props) => {
     <IssueRow key={issue._id} issue={issue} deleteIssue={deleteIssue} />
   ))
   return (
-    <table className="bordered-table">
+    <Table bordered condensed hover responsive>
       <thead>
         <tr>
           <th>Id</th>
@@ -141,7 +142,7 @@ const IssueTable = (props) => {
       <tbody>
         {issueRows}
       </tbody>
-    </table>
+    </Table>
   )
 }
 
@@ -174,7 +175,11 @@ const IssueRow = (props) => {
       <td>{effort}</td>
       <td>{completionDate ? completionDate.toDateString() : ''}</td>
       <td>{title}</td>
-      <td><button type="button" onClick={onDeleteClick}>Delete</button></td>
+      <td>
+        <Button bsSize="xsmall" onClick={onDeleteClick}>
+          <Glyphicon glyph="trash" />
+        </Button>
+      </td>
     </tr>
   )
 }

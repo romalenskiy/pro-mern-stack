@@ -3,7 +3,6 @@
     "browser": true
   },
   "rules": {
-    "no-alert": "off",
-    "react/jsx-one-expression-per-line": "off",
+    "react/jsx-one-expression-per-line": "off"
   }
 }
