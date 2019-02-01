@@ -1,20 +1,15 @@
 // Configs, vars etc.
-import '@babel/polyfill'
-import SourceMapSupport from 'source-map-support'
 import express from 'express'
 import bodyParser from 'body-parser'
-import { MongoClient, ObjectId } from 'mongodb'
-import path from 'path'
+import { ObjectId } from 'mongodb'
 
 import Issue from './issue'
+import renderedPageRouter from './renderedPageRouter.jsx'
 
 const webpack = require('webpack')
 const webpackDevMiddleware = require('webpack-dev-middleware')
 const webpackHotMiddleware = require('webpack-hot-middleware')
 const config = require('../webpack.config')
-
-
-SourceMapSupport.install()
 
 const app = express()
 let db
@@ -33,16 +28,6 @@ if (process.env.NODE_ENV !== 'production') {
   app.use(webpackDevMiddleware(bundler, { noInfo: true }))
   app.use(webpackHotMiddleware(bundler, { log: console.log }))
 }
-
-// MongoDB
-MongoClient.connect('mongodb://localhost/issuetracker', { useNewUrlParser: true })
-  .then((connection) => {
-    db = connection.db()
-    app.listen(3000, () => { console.log('App started on port 3000') })
-  })
-  .catch((error) => {
-    console.log('ERROR: ', error)
-  })
 
 // Get
 app.get('/api/issues', (req, res) => {
@@ -84,9 +69,7 @@ app.get('/api/issues/:id', (req, res) => {
     })
 })
 
-app.get('*', (req, res) => {
-  res.sendFile(path.resolve('static/index.html'))
-})
+app.use('/', renderedPageRouter)
 
 // Post
 app.post('/api/issues', (req, res) => {
@@ -158,3 +141,10 @@ app.delete('/api/issues/:id', (req, res) => {
       res.status(500).json({ message: `Internal Server Error: ${error}` })
     })
 })
+
+// Functions
+function setDb(newDb) {
+  db = newDb
+}
+
+export { app, setDb }

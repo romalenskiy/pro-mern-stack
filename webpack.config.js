@@ -2,7 +2,7 @@ const path = require('path')
 
 module.exports = {
   entry: {
-    app: ['@babel/polyfill', './src/App.jsx'],
+    app: ['@babel/polyfill', './client/Client.jsx'],
   },
   output: {
     path: path.resolve(__dirname, 'static'),
@@ -40,7 +40,7 @@ module.exports = {
     port: 8000,
     contentBase: 'static',
     proxy: {
-      '/api/*': {
+      '**': {
         target: 'http://localhost:3000',
       },
     },
